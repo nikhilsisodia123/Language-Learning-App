@@ -659,7 +659,7 @@ class Dialogue(tk.simpledialog.Dialog):
         conn.commit()
         conn.close()
             
-    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):        
         '''add standard button box.
     
         override if you do not want the standard buttons
@@ -772,7 +772,7 @@ class Add_language(tk.simpledialog.Dialog):
         conn.commit()
         conn.close()
         
-    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):         
         '''add standard button box.
     
         override if you do not want the standard buttons
@@ -832,7 +832,7 @@ class Delete_language(tk.simpledialog.Dialog):
             conn.commit()
             conn.close()
             
-    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):         
         '''add standard button box.
     
         override if you do not want the standard buttons
