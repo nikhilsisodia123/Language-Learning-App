@@ -617,7 +617,7 @@ class Dialogue(tk.simpledialog.Dialog):
         self.columns = parent.query_col()             #Why did I have to put this before the init of parent class??
         self.columns.extend(["category", "image_path"])
         tk.simpledialog.Dialog.__init__(self, parent) #It's because the init uses the body function so need to define self.columns = query_cols() first, otherwise when called
-                                                      #it would be undefined
+        self.parent = parent                                              #it would be undefined
  
         
     
@@ -633,7 +633,7 @@ class Dialogue(tk.simpledialog.Dialog):
             self.entries[j].grid(row=i, column=1)
         #self.inputs["french"].set("LOL")                   #Cant set StringVar variables from outside body function???? But can use get on it
                                                             #Possibly code executed after the error window is closed, which means we do not see it when the stringVar is set to a different value
-    def add_data(self,parent):                             
+    def add_data(self):                             
         query_start = """INSERT INTO french("""
         query_end = """ VALUES ("""
         values = []
@@ -659,7 +659,7 @@ class Dialogue(tk.simpledialog.Dialog):
         conn.commit()
         conn.close()
             
-    def buttonbox(self,parent):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
         '''add standard button box.
     
         override if you do not want the standard buttons
@@ -667,7 +667,7 @@ class Dialogue(tk.simpledialog.Dialog):
     
         box = tk.Frame(self)
 
-        w = tk.Button(box, text="OK", width=10, command=lambda: [self.ok(),self.add_data(parent), parent.update_treeview()], default=tk.ACTIVE)
+        w = tk.Button(box, text="OK", width=10, command=lambda: [self.ok(),self.add_data(), self.parent.update_treeview()], default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
         w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
         w.pack(side=tk.LEFT, padx=5, pady=5)
@@ -683,6 +683,7 @@ class Modify(Dialogue):              #Comment and document this whole class its 
         self.s = parent.tree.selection()
         self.s_cols = parent.tree.item(self.s)["values"]
         self.id = parent.tree.item(self.s)["values"][-1]
+        self.parent=parent
 
         Dialogue.__init__(self, parent)    #Figure out where to put this
 
@@ -698,7 +699,7 @@ class Modify(Dialogue):              #Comment and document this whole class its 
             self.entries[j] = tk.Entry(parent, textvariable=self.inputs[j])
             self.entries[j].grid(row=i, column=1)
             
-    def add_data(self,parent):
+    def add_data(self):
         list = []
         list_att = []
         for i,j in enumerate(self.columns):
@@ -733,6 +734,7 @@ class Modify(Dialogue):              #Comment and document this whole class its 
 class Add_language(tk.simpledialog.Dialog):
     def __init__(self, parent):
         tk.simpledialog.Dialog.__init__(self, parent)
+        self.parent = parent
     
     def body(self,master):        
         self.entry_frame = tk.Frame(master)
@@ -770,7 +772,7 @@ class Add_language(tk.simpledialog.Dialog):
         conn.commit()
         conn.close()
         
-    def buttonbox(self,parent):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
         '''add standard button box.
     
         override if you do not want the standard buttons
@@ -778,7 +780,7 @@ class Add_language(tk.simpledialog.Dialog):
     
         box = tk.Frame(self)
 
-        w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.add_data(), parent.tree.destroy(), parent.treeview()], default=tk.ACTIVE)
+        w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.add_data(), self.parent.tree.destroy(), self.parent.treeview()], default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
         w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
         w.pack(side=tk.LEFT, padx=5, pady=5)
@@ -791,6 +793,7 @@ class Add_language(tk.simpledialog.Dialog):
 class Delete_language(tk.simpledialog.Dialog):
     def __init__(self, parent):
         self.languages = parent.query_col()
+        self.parent=parent
         tk.simpledialog.Dialog.__init__(self, parent)
         
     def body(self, master):
@@ -829,7 +832,7 @@ class Delete_language(tk.simpledialog.Dialog):
             conn.commit()
             conn.close()
             
-    def buttonbox(self,parent):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
+    def buttonbox(self):         #self.buttonbox() in line 131 of simpledialog.py changed to self.buttonbox(parent)
         '''add standard button box.
     
         override if you do not want the standard buttons
@@ -837,7 +840,7 @@ class Delete_language(tk.simpledialog.Dialog):
     
         box = tk.Frame(self)
 
-        w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.del_data(), parent.tree.destroy(), parent.treeview()], default=tk.ACTIVE)
+        w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.del_data(), self.parent.tree.destroy(), self.parent.treeview()], default=tk.ACTIVE)
         w.pack(side=tk.LEFT, padx=5, pady=5)
         w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
         w.pack(side=tk.LEFT, padx=5, pady=5)
