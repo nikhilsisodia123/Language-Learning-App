@@ -285,6 +285,7 @@ class Quiz(tk.Frame):
 
         
     def check(self, parent):
+        print(self.current)
         if " ".join(self.string.get().split()) ==  self.current[1]:    #Removes all extra whitespace
             print("correct")
             parent.page3.correct.tkraise()
@@ -370,7 +371,7 @@ class Q_picture(Quiz):
         self.questions(parent.page1.picked)
         
     def questions(self, options):
-        query = """SELECT * FROM french WHERE category IN ("""
+        query = """SELECT """+ language1.get().lower() + """,""" + language2.get().lower() +  """, image_path FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
         query = query[:-1] + """) AND image_path IS NOT NULL;"""  #empty values saved as "" empty string. If changed to NULL then change this appropriately
@@ -406,7 +407,7 @@ class Q_picture(Quiz):
         self.display_image()
 
     def display_image(self):
-        image = Image.open(self.current[1])
+        image = Image.open(self.current[2])
         image.thumbnail((300,300), Image.Resampling.LANCZOS)
         image= ImageTk.PhotoImage(image)
         self.question.configure(image = image)
@@ -500,6 +501,7 @@ class Database(tk.Frame):
         self.accent_btns(char_list)
         #self.accents = tk.Button(self.symbols, text="\u0300 ", width=2, command=lambda: self.add_accent("\u0300"))
         #self.accents.pack()
+        self.cat_combobox = tk.StringVar() #For category combobox in Modify class, keeps memory of last stored category
         
         
 
@@ -507,7 +509,7 @@ class Database(tk.Frame):
         columns = self.query_col()+["Category", "Image Path", "id"]
         self.tree = ttk.Treeview(self.list, column=columns, show="headings")
         for i in columns:
-            self.tree.heading(i, text=i)
+            self.tree.heading(i, text=i.capitalize())
         for i in self.all_data():
             display = i[3:]+i[:3]
             self.tree.insert("", tk.END, values = display)
@@ -607,6 +609,7 @@ class Database(tk.Frame):
         
     def add_language(self):
         self.add_lang = Add_language(self)
+        print(self.cat_combobox.get())
         
     def delete_language(self):
         self.del_lang = Delete_language(self)
@@ -615,9 +618,9 @@ class Database(tk.Frame):
 class Dialogue(tk.simpledialog.Dialog):
     def __init__(self, parent):
         self.columns = parent.query_col()             #Why did I have to put this before the init of parent class??
-        #self.columns.append("image_path")
+        self.parent = parent        
         tk.simpledialog.Dialog.__init__(self, parent) #It's because the init uses the body function so need to define self.columns = query_cols() first, otherwise when called
-        self.parent = parent                                              #it would be undefined
+                                                      #it would be undefined
  
         
     
@@ -632,9 +635,10 @@ class Dialogue(tk.simpledialog.Dialog):
             self.entries[j] = tk.Entry(parent, textvariable=self.inputs[j])
             self.entries[j].grid(row=i, column=1)
         self.inputs["category"] =  tk.StringVar()
+        self.inputs["category"].set(self.parent.cat_combobox.get())
         self.labels["category"] = tk.Label(parent, text = "Category:")
         self.labels["category"].grid(row=i+1, column=0)
-        self.entries["category"]= ttk.Combobox(parent, textvariable = self.inputs["category"], values= self.categories() )
+        self.entries["category"]= ttk.Combobox(parent, textvariable = self.inputs["category"], values= self.categories())
         self.entries["category"].grid(row=i+1, column=1)
         self.inputs["image_path"] = tk.StringVar()
         self.labels["image_path"] = tk.Label(parent, text = "Image path:")
@@ -643,7 +647,8 @@ class Dialogue(tk.simpledialog.Dialog):
         self.entries["image_path"].grid(row=i+2, column=1)
         #self.inputs["french"].set("LOL")                   #Cant set StringVar variables from outside body function???? But can use get on it
                                                             #Possibly code executed after the error window is closed, which means we do not see it when the stringVar is set to a different value
-    def add_data(self):                             
+    def add_data(self):   
+        print(self.parent.cat_combobox.get())                          
         query_start = """INSERT INTO french("""
         query_end = """ VALUES ("""
         values = []
@@ -668,7 +673,9 @@ class Dialogue(tk.simpledialog.Dialog):
             tk.messagebox.showerror("ERROR", "Category field cannot be empty")
         conn.commit()
         conn.close()
-            
+        
+        self.parent.cat_combobox.set(self.inputs["category"].get()) #Stores the category in parent instance if category added to database
+        
     def buttonbox(self):        
         '''add standard button box.
     
@@ -707,8 +714,6 @@ class Modify(tk.simpledialog.Dialog):              #Comment and document this wh
         self.parent=parent
         tk.simpledialog.Dialog.__init__(self, parent)
         
-
-
     def body(self, parent):
         self.labels={}
         self.entries={}
@@ -754,11 +759,6 @@ class Modify(tk.simpledialog.Dialog):              #Comment and document this wh
         conn.close()
         
     def buttonbox(self):        
-        '''add standard button box.
-    
-        override if you do not want the standard buttons
-        '''
-    
         box = tk.Frame(self)
 
         w = tk.Button(box, text="OK", width=10, command=lambda: [self.ok(),self.add_data(), self.parent.update_treeview()], default=tk.ACTIVE)
