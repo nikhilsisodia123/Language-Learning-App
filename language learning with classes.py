@@ -487,15 +487,18 @@ class Database(tk.Frame):
         
         self.treeview()
         
-        self.input.rowconfigure(0, weight=1)
+        self.input.rowconfigure([0,1], weight=1, uniform="a")
         self.input.columnconfigure([0,1,2], weight=1, uniform="z")
         
         self.add_btn = tk.Button(self.input, text="Add Data", command=self.addition)
-        self.add_btn.grid(row=0, column=0, padx=10,ipadx=5, sticky="nsew")
+        self.add_btn.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
         self.add_lang_btn = tk.Button(self.input, text="Add Language", command=self.add_language)
-        self.add_lang_btn.grid(row=0, column=1, padx=5, sticky="nsew")
+        self.add_lang_btn.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
+        self.ren_lang_btn = tk.Button(self.input, text="Rename Language", command=self.rename_language)
+        self.ren_lang_btn.grid(row=1, column=1, padx=5, pady=5, sticky="nsew")
         self.del_lang_btn =  tk.Button(self.input, text="Delete Language", command=self.delete_language)
-        self.del_lang_btn.grid(row=0, column=2, padx=5, sticky="nsew")
+        self.del_lang_btn.grid(row=1, column=2, padx=5, pady=5, sticky="nsew")
+
         #self.symbols.columnconfigure(0, )
         char_list = ["\u0300", "\u0301", "\u0303", "\u0304", "\u0305", "\u0306", "\u0307"]
         self.accent_btns(char_list)
@@ -508,6 +511,7 @@ class Database(tk.Frame):
     def treeview(self):
         columns = self.query_col()+["Category", "Image Path", "id"]
         self.tree = ttk.Treeview(self.list, column=columns, show="headings")
+        self.heading_names = {}
         for i in columns:
             self.tree.heading(i, text=i.capitalize())
         for i in self.all_data():
@@ -614,6 +618,9 @@ class Database(tk.Frame):
     def delete_language(self):
         self.del_lang = Delete_language(self)
         
+    def rename_language(self):
+        ren_lang=Rename_language(self)
+        
 
 class Dialogue(tk.simpledialog.Dialog):
     def __init__(self, parent):
@@ -676,12 +683,8 @@ class Dialogue(tk.simpledialog.Dialog):
         
         self.parent.cat_combobox.set(self.inputs["category"].get()) #Stores the category in parent instance if category added to database
         
+        
     def buttonbox(self):        
-        '''add standard button box.
-    
-        override if you do not want the standard buttons
-        '''
-    
         box = tk.Frame(self)
 
         w = tk.Button(box, text="OK", width=10, command=lambda: [self.ok(),self.add_data(), self.parent.update_treeview()], default=tk.ACTIVE)
@@ -813,11 +816,6 @@ class Add_language(tk.simpledialog.Dialog):
         conn.close()
         
     def buttonbox(self):         
-        '''add standard button box.
-    
-        override if you do not want the standard buttons
-        '''
-    
         box = tk.Frame(self)
 
         w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.add_data(), self.parent.tree.destroy(), self.parent.treeview()], default=tk.ACTIVE)
@@ -829,6 +827,50 @@ class Add_language(tk.simpledialog.Dialog):
         self.bind("<Escape>", self.cancel)
         
         box.pack()
+     
+class Rename_language(tk.simpledialog.Dialog):
+    def __init__(self, parent):
+        self.languages = parent.query_col()
+        self.parent=parent
+        tk.simpledialog.Dialog.__init__(self, parent)
+        
+    def body(self, master):
+        self.input = tk.Frame(master)
+        self.input.pack(side=tk.TOP, fill=tk.X)
+        self.input.columnconfigure([0, 1], weight=1, uniform="a")
+        self.chosen = tk.StringVar()
+        self.new = tk.StringVar()
+        self.cat_combobox = ttk.Combobox(self.input, textvariable = self.chosen, values=self.languages)
+        self.cat_combobox.grid(row=0, column=0)
+        self.entry = tk.Entry(self.input, textvariable=self.new)
+        self.entry.grid(row=0, column=1)
+        
+                
+    def ren_data(self):
+        query = """ALTER TABLE french
+                   RENAME COLUMN """ + self.chosen.get() + """ TO """ + self.new.get()
+        print(query)
+
+        conn = sqlite3.connect("french.db")
+        c =conn.cursor()
+        c.execute(query)
+        conn.commit()
+        conn.close()
+            
+    def buttonbox(self):         
+        box = tk.Frame(self)
+
+        w = tk.Button(box, text="Confirm", width=10, justify=tk.LEFT, command=lambda: [self.ok(), self.ren_data(), self.parent.tree.destroy(), self.parent.treeview()], default=tk.ACTIVE)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+        w = tk.Button(box, text="Cancel", width=10, command=self.cancel)
+        w.pack(side=tk.LEFT, padx=5, pady=5)
+
+        self.bind("<Return>", self.ok)
+        self.bind("<Escape>", self.cancel)
+        
+        box.pack()    
+        
+     
         
 class Delete_language(tk.simpledialog.Dialog):
     def __init__(self, parent):
