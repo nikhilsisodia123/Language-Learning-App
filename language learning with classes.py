@@ -316,6 +316,7 @@ class Quiz(tk.Frame):
 class Q_translate(Quiz):
     def __init__(self, parent):
         Quiz.__init__(self, parent)
+        self.parent=parent
         self.prompt = tk.Label(self, text="Translate this", justify="center")
         self.prompt.pack(side=tk.TOP, fill=tk.X, pady=20)
                    
@@ -327,19 +328,21 @@ class Q_translate(Quiz):
         query = """SELECT """ + language1.get().lower() + """,""" + language2.get().lower() + """ FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
-        query = query[:-1] + """);"""
+        query = query[:-1] + """) AND """ + language1.get().lower() + """ IS NOT NULL AND """ + language2.get().lower() + """ IS NOT NULL"""
         print(query)
             
         conn = sqlite3.connect('french.db')
         c = conn.cursor()
         c.execute(query, (options))
         self.Q = c.fetchall()
-        print(options)
-        random.shuffle(self.Q)
-        self.Q_iter = iter(self.Q)
-        print(self.Q)
-        self.current = next(self.Q_iter)
-        self.question.configure(text = self.current[0])
+        if len(self.Q) != 0: 
+            random.shuffle(self.Q)
+            self.Q_iter = iter(self.Q)
+            self.current = next(self.Q_iter)
+            self.question.configure(text = self.current[0])
+        else:
+            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair.")
+            self.parent.page4.tkraise()
         conn.commit()
         conn.close()
         
@@ -363,6 +366,7 @@ class Q_translate(Quiz):
 class Q_picture(Quiz):
     def __init__(self, parent):
         Quiz.__init__(self, parent)
+        self.parent = parent
         self.prompt = tk.Label(self, text="What is this? ", justify="center")
         self.prompt.pack(side=tk.TOP, fill=tk.X, pady=20)
                   
@@ -374,19 +378,22 @@ class Q_picture(Quiz):
         query = """SELECT """+ language1.get().lower() + """,""" + language2.get().lower() +  """, image_path FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
-        query = query[:-1] + """) AND image_path IS NOT NULL;"""  #empty values saved as "" empty string. If changed to NULL then change this appropriately
+        query = query[:-1] + """) AND image_path IS NOT NULL AND """ + language2.get().lower() + """ IS NOT NULL"""  #Only need one language_.get().lower()
         print(query)                                        #query filters out rows with no image paths, so error isn't raised
             
         conn = sqlite3.connect('french.db')
         c = conn.cursor()
         c.execute(query, (options))
         self.Q = c.fetchall()
-        print(options)
-        random.shuffle(self.Q)
-        self.Q_iter = iter(self.Q)
-        print(self.Q)
-        self.current = next(self.Q_iter)
-        self.display_image()
+        if len(self.Q) != 0:
+            random.shuffle(self.Q)
+            self.Q_iter = iter(self.Q)
+            print(self.Q)
+            self.current = next(self.Q_iter)
+            self.display_image()
+        else:
+            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair.")
+            self.parent.page4.tkraise()
         conn.commit()
         conn.close()
         
@@ -466,7 +473,7 @@ class Completed(tk.Frame):
         self.frame.pack(side=tk.BOTTOM)
         self.restart_btn = tk.Button(self.frame, text = "Restart?", width=20, command= lambda: [parent.page2.restart(), self.command_change(parent), parent.page2.tkraise()])
         self.restart_btn.pack(side = tk.LEFT, pady=10, padx=5)
-        self.refresh_btn = tk.Button(self.frame, text = "Refresh?", width=20, command= lambda: [parent.page2.questions(parent.page1.picked), self.command_change(parent), parent.page2.tkraise()])
+        self.refresh_btn = tk.Button(self.frame, text = "Refresh?", width=20, command= lambda: [ self.command_change(parent), parent.page2.tkraise(), parent.page2.questions(parent.page1.picked)])
         self.refresh_btn.pack(side = tk.RIGHT, pady=10, padx=5) 
         
     def command_change(self, parent):
