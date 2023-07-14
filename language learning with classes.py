@@ -37,16 +37,27 @@ class initialise(tk.Tk):
         
         #self.main.language1 = self.languages.language1
         #self.main.language2 = self.languages.language2
+        self.home = Home(self.main)
         
-        self.tran_only = Pages(self.main, "tran_only")
-        self.pic_only = Pages(self.main, "pic_only")
+        #self.tran_only = Pages(self.main, "tran_only")
+        #self.pic_only = Pages(self.main, "pic_only")
         
         self.database = Database(self.main)
-        self.tran_only.tkraise() #change to home section
+        #self.tran_only.tkraise() #change to home section
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.sidebar = Sidebar(self)
         self.sidebar_click = 0
+        
+    def tran_only_mode(self):
+        self.tran_only = Pages(self.main, "tran_only")
+        self.tran_only.page2.tkraise()
+        self.sidebar.home_btn2.configure(command = lambda: [self.sidebar.highlight(2), self.tran_only.tkraise()])
+        
+    def pic_only_mode(self):
+        self.pic_only = Pages(self.main, "pic_only")
+        self.pic_only.page2.tkraise()
+        self.sidebar.home_btn3.configure(command = lambda: [self.sidebar.highlight(3), self.pic_only.tkraise()])
 
         
     def sidebar_change(self):
@@ -61,7 +72,12 @@ class initialise(tk.Tk):
             self.sidebar_click = 0
             
     
-        
+class Home(tk.Frame):
+    def __init__(self, parent):
+        tk.Frame.__init__(self, parent)
+        self.grid(row=0, column=0, sticky="nsew")
+        self.welcome = tk.Label(self, text="W E L C O M E")
+        self.welcome.pack(fill=tk.BOTH, expand=True)
         
 class Languages(tk.Frame):
     def __init__(self, parent, color):
@@ -121,9 +137,9 @@ class Sidebar(tk.Frame):
         
         self.place(x=0, width=114, relheight=1, anchor = "ne")
         #self.home_btn1 = tk.Button(self.bottom, text="HOME", command = lambda: [self.highlight(1)])
-        self.home_btn1 = tk.Button(self.bottom, text="HOME", command = lambda: self.highlight(1)) 
-        self.home_btn2 = tk.Button(self.bottom, text="TRANSLATE ONLY", command = lambda: [self.highlight(2), parent.tran_only.tkraise()])
-        self.home_btn3 = tk.Button(self.bottom, text="PICTURES ONLY", command = lambda: [self.highlight(3), parent.pic_only.tkraise()])
+        self.home_btn1 = tk.Button(self.bottom, text="HOME", command = lambda: [self.highlight(1), parent.home.tkraise()]) 
+        self.home_btn2 = tk.Button(self.bottom, text="TRANSLATE ONLY", command = lambda: [self.highlight(2), parent.tran_only_mode()]) #Add function to check the language pairs will not give all nulls in question method
+        self.home_btn3 = tk.Button(self.bottom, text="PICTURES ONLY", command = lambda: [self.highlight(3), parent.pic_only_mode()])
         self.home_btn4 = tk.Button(self.bottom, text="DATABASE", command = lambda: [self.highlight(4), parent.database.tkraise()])
         self.home_btn5 = tk.Button(self.bottom, text = "SETTINGS", command = lambda: [self.highlight(0)])
         self.home_btn1.pack(side=tk.TOP, fill=tk.X)
@@ -166,7 +182,7 @@ class Pages(tk.Frame):
         self.page3 = Judge(self, False)
         self.page4 = Completed(self)
         self.current_page = 0
-        self.page2.tkraise()
+        #self.page2.tkraise()
 
         
         
@@ -341,7 +357,7 @@ class Q_translate(Quiz):
             self.current = next(self.Q_iter)
             self.question.configure(text = self.current[0])
         else:
-            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair.")
+            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair or add relevant translations in Database.")
             self.parent.page4.tkraise()
         conn.commit()
         conn.close()
@@ -392,7 +408,7 @@ class Q_picture(Quiz):
             self.current = next(self.Q_iter)
             self.display_image()
         else:
-            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair.")
+            tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair or add relevant image paths into Database.")
             self.parent.page4.tkraise()
         conn.commit()
         conn.close()
@@ -941,7 +957,8 @@ class Delete_language(tk.simpledialog.Dialog):
         
     
 root = initialise()
-root.tran_only.page2.input_ans.focus_force()
+#root.tran_only.page2.input_ans.focus_force()
+root.home.tkraise()
 root.mainloop()
 
 
