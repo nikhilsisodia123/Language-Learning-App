@@ -18,13 +18,14 @@ class initialise(tk.Tk):
         self.topbar = tk.Frame(self, bg=topbar_colour)
         self.topbar.rowconfigure(0)
         self.topbar.columnconfigure(0, weight=1, uniform="b")
-        self.topbar.columnconfigure(1, weight=1)
+        self.topbar.columnconfigure(1, weight=200)
         self.topbar.columnconfigure(2, weight=1, uniform="b")
         self.topbar.pack(side=tk.TOP, fill = tk.X)
         self.menu = tk.Button(self.topbar, text = "menu", width = 15, command=self.sidebar_change)
         self.menu.grid(row=0, column=0, sticky="nsw")
-        self.languages = Languages(self.topbar, "blue")
-        self.languages.grid(row=0, column=2, sticky = "nse")
+        #self.languages = Languages(self.topbar, "blue")
+        self.settings =tk.Button(self.topbar, text="Settings")
+        self.settings.grid(row=0, column=2, sticky = "nsew") #No set width
         #Dont use self.title as it will create problems when using dialogbox in database section
         self.title_ = tk.Label(self.topbar, text = "Language Learning APP", font = ("Arial", 25), bg=topbar_colour)
         self.title_.grid(row=0, column=1, sticky="nsew")
@@ -51,12 +52,12 @@ class initialise(tk.Tk):
         
     def tran_only_mode(self):
         self.tran_only = Pages(self.main, "tran_only")
-        self.tran_only.page2.tkraise()
+        self.tran_only.content.page2.tkraise()
         self.sidebar.home_btn2.configure(command = lambda: [self.sidebar.highlight(2), self.tran_only.tkraise()])
         
     def pic_only_mode(self):
         self.pic_only = Pages(self.main, "pic_only")
-        self.pic_only.page2.tkraise()
+        self.pic_only.content.page2.tkraise()
         self.sidebar.home_btn3.configure(command = lambda: [self.sidebar.highlight(3), self.pic_only.tkraise()])
 
         
@@ -87,20 +88,20 @@ class Languages(tk.Frame):
         global language1 #i know i know its taboo. However, better than passing down multiple classes. Could maybe use inheritance?
         global language2
         
-        language1 = tk.StringVar()
-        language1.set("english")
-        language2 = tk.StringVar()
-        language2.set("french")
+        self.language1 = tk.StringVar()
+        self.language1.set("english")
+        self.language2 = tk.StringVar()
+        self.language2.set("french")
         
-        self.right_btn = ttk.Combobox(self, state="readonly", width=7, textvariable= language2)
+        self.right_btn = ttk.Combobox(self, state="readonly", width=7, textvariable= self.language2)
         self.right_btn["values"] = langs
         self.right_btn.current(1)
         self.right_btn.pack(side = tk.RIGHT, fill = tk.Y, expand = True)
-        self.left_btn = ttk.Combobox(self, state="readonly", width=7, textvariable= language1)
+        self.left_btn = ttk.Combobox(self, state="readonly", width=7, textvariable= self.language1)
         self.left_btn["values"] = langs
         self.left_btn.current(0)
         self.left_btn.pack(side = tk.LEFT, fill = tk.Y, expand=True)
-        self.arrow = tk.Label(self, text = "Translate to", bg=topbar_colour)
+        self.arrow = tk.Label(self, text = "Translate to", bg="lightgrey")
         self.arrow.pack(side = tk.LEFT, fill=tk.BOTH, expand = True)
         
     def query_col(self):
@@ -141,18 +142,17 @@ class Sidebar(tk.Frame):
         self.home_btn2 = tk.Button(self.bottom, text="TRANSLATE ONLY", command = lambda: [self.highlight(2), parent.tran_only_mode()]) #Add function to check the language pairs will not give all nulls in question method
         self.home_btn3 = tk.Button(self.bottom, text="PICTURES ONLY", command = lambda: [self.highlight(3), parent.pic_only_mode()])
         self.home_btn4 = tk.Button(self.bottom, text="DATABASE", command = lambda: [self.highlight(4), parent.database.tkraise()])
-        self.home_btn5 = tk.Button(self.bottom, text = "SETTINGS", command = lambda: [self.highlight(0)])
+        
         self.home_btn1.pack(side=tk.TOP, fill=tk.X)
         self.home_btn2.pack(side=tk.TOP, fill=tk.X)
         self.home_btn3.pack(side=tk.TOP, fill=tk.X)
         self.home_btn4.pack(side=tk.TOP, fill=tk.X)
-        self.home_btn5.pack(side=tk.BOTTOM, fill=tk.X)
+        
         
         self.btn_dict = {1:self.home_btn1,
                          2:self.home_btn2,
                          3:self.home_btn3,
-                         4:self.home_btn4,
-                         5:self.home_btn5}
+                         4:self.home_btn4}
         self.indicator = 0
         
     #Function creates highlighting on selected mode. Make a cleaner and mor efficient function if possible.           
@@ -170,17 +170,30 @@ class Pages(tk.Frame):
         tk.Frame.__init__(self, parent)
         #self.language1 = parent.language1
         #self.language2 = parent.language2
-        
         self.grid(row=0, column=0, sticky="nsew")
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
-        self.page1 = Categories(self)
+        #self.rowconfigure(0, weight=1)
+        #self.columnconfigure(0, weight=1)
+        
+        self.language_bar = tk.Frame(self)
+        self.language_bar.pack(side=tk.TOP, fill=tk.X, pady=5)
+        self.content = tk.Frame(self, bg="blue")
+        self.content.pack(fill=tk.BOTH, expand=True)
+        self.content.rowconfigure(0, weight=1)
+        self.content.columnconfigure(0, weight=1)
+        
+        self.refresh = tk.Button(self.language_bar, text= "Refresh?", command = lambda:[self.content.page2.tkraise(),self.content.page2.questions(self.content.page1.picked)])
+        self.refresh.pack(side=tk.RIGHT)
+        self.languages = Languages(self.language_bar, "grey")
+        self.languages.pack(side=tk.RIGHT, fill=tk.Y)
+        self.content.language1 = self.languages.language1
+        self.content.language2 = self.languages.language2   
+        self.content.page4 = Completed(self.content)
+        self.content.page1 = Categories(self.content)
         if opt == "tran_only":
-            self.page2 = Q_translate(self)
+            self.content.page2 = Q_translate(self.content)
         if opt == "pic_only":
-            self.page2 = Q_picture(self)
-        self.page3 = Judge(self, False)
-        self.page4 = Completed(self)
+            self.content.page2 = Q_picture(self.content)
+        self.content.page3 = Judge(self.content, False)
         self.current_page = 0
         #self.page2.tkraise()
 
@@ -341,10 +354,10 @@ class Q_translate(Quiz):
         self.questions(parent.page1.picked)
         
     def questions(self, options):
-        query = """SELECT """ + language1.get().lower() + """,""" + language2.get().lower() + """ FROM french WHERE category IN ("""
+        query = """SELECT """ + self.parent.language1.get().lower() + """,""" + self.parent.language2.get().lower() + """ FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
-        query = query[:-1] + """) AND """ + language1.get().lower() + """ IS NOT NULL AND """ + language2.get().lower() + """ IS NOT NULL"""
+        query = query[:-1] + """) AND """ + self.parent.language1.get().lower() + """ IS NOT NULL AND """ + self.parent.language2.get().lower() + """ IS NOT NULL"""
         print(query)
             
         conn = sqlite3.connect('french.db')
@@ -358,7 +371,6 @@ class Q_translate(Quiz):
             self.question.configure(text = self.current[0])
         else:
             tk.messagebox.showerror("ERROR", "The language pair has no translations between eachother. Please choose another language pair or add relevant translations in Database.")
-            self.parent.page4.tkraise()
         conn.commit()
         conn.close()
         
@@ -391,10 +403,10 @@ class Q_picture(Quiz):
         self.questions(parent.page1.picked)
         
     def questions(self, options):
-        query = """SELECT """+ language1.get().lower() + """,""" + language2.get().lower() +  """, image_path FROM french WHERE category IN ("""
+        query = """SELECT """+ self.parent.language1.get().lower() + """,""" + self.parent.language2.get().lower() +  """, image_path FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
-        query = query[:-1] + """) AND image_path IS NOT NULL AND """ + language2.get().lower() + """ IS NOT NULL"""  #Only need one language_.get().lower()
+        query = query[:-1] + """) AND image_path IS NOT NULL AND """ + self.parent.language2.get().lower() + """ IS NOT NULL"""  #Only need one language_.get().lower()
         print(query)                                        #query filters out rows with no image paths, so error isn't raised
             
         conn = sqlite3.connect('french.db')
@@ -489,7 +501,7 @@ class Completed(tk.Frame):
         self.frame.pack(side=tk.BOTTOM)
         self.restart_btn = tk.Button(self.frame, text = "Restart?", width=20, command= lambda: [parent.page2.restart(), self.command_change(parent), parent.page2.tkraise()])
         self.restart_btn.pack(side = tk.LEFT, pady=10, padx=5)
-        self.refresh_btn = tk.Button(self.frame, text = "Refresh?", width=20, command= lambda: [ self.command_change(parent), parent.page2.tkraise(), parent.page2.questions(parent.page1.picked)])
+        self.refresh_btn = tk.Button(self.frame, text = "Refresh?", width=20, command= lambda: [self.command_change(parent), parent.page2.tkraise(), parent.page2.questions(parent.page1.picked)])
         self.refresh_btn.pack(side = tk.RIGHT, pady=10, padx=5) 
         
     def command_change(self, parent):
@@ -957,7 +969,7 @@ class Delete_language(tk.simpledialog.Dialog):
         
     
 root = initialise()
-#root.tran_only.page2.input_ans.focus_force()
+#root.tran_only.content.page2.input_ans.focus_force()
 root.home.tkraise()
 root.mainloop()
 
