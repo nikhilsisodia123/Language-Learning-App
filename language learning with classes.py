@@ -837,16 +837,18 @@ class Add_language(tk.simpledialog.Dialog):
         self.count += 1
         
     def add_data(self):
-        query = """ALTER TABLE french 
+        query_start = """ALTER TABLE french 
                    ADD """ 
-        for key in self.strings:
-            query += self.strings[key].get() + """ VARCHAR(255), """
-        query = query[:-2]
-        print(query)
+        #for key in self.strings:
+        #    query += self.strings[key].get() + """ VARCHAR(255), """
+        #query = query[:-2]
+        #print(query)
         
         conn = sqlite3.connect("french.db")
         c = conn.cursor()
-        c.execute(query)
+        for key in self.strings:
+            query = query_start + self.strings[key].get() + """ VARCHAR(255);"""
+            c.execute(query)
         conn.commit()
         conn.close()
         
@@ -907,7 +909,7 @@ class Rename_language(tk.simpledialog.Dialog):
         
      
         
-class Delete_language(tk.simpledialog.Dialog):
+class Delete_language(tk.simpledialog.Dialog): #Rename self.cats?
     def __init__(self, parent):
         self.languages = parent.query_col()
         self.parent=parent
@@ -929,23 +931,23 @@ class Delete_language(tk.simpledialog.Dialog):
                 column=0
                 
     def del_data(self):
-        query = """ALTER TABLE french
-                   DROP COLUMN """
+        query_start = """ALTER TABLE french
+                         DROP COLUMN """
+        query = []
         tick_count = 0
         for i in self.cats:
             if self.values[i].get() == 1:
-                query += i + """, """
+                query.append(query_start + i.lower())     #Change append method to different algorithm?
                 tick_count += 1
-        query = query[:-2]
-        print(query)
-        print(tick_count)
+        
         
         if len(self.cats)-tick_count < 2:
             tk.messagebox.showerror("ERROR", "Need to keep atleast 2 langauges")
         else:
             conn = sqlite3.connect("french.db")
             c =conn.cursor()
-            c.execute(query)
+            for i in query:
+                c.execute(i)
             conn.commit()
             conn.close()
             
