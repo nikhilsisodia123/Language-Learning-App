@@ -193,6 +193,8 @@ class Pages(tk.Frame):
             self.content.page2 = Q_translate(self.content)
         if opt == "pic_only":
             self.content.page2 = Q_picture(self.content)
+            self.languages.left_btn.destroy()
+            self.languages.arrow.destroy()
         self.content.page3 = Judge(self.content, False)
         self.current_page = 0
         #self.page2.tkraise()
@@ -403,7 +405,7 @@ class Q_picture(Quiz):
         self.questions(parent.page1.picked)
         
     def questions(self, options):
-        query = """SELECT """+ self.parent.language1.get().lower() + """,""" + self.parent.language2.get().lower() +  """, image_path FROM french WHERE category IN ("""
+        query = """SELECT """+ self.parent.language2.get().lower() + """, image_path FROM french WHERE category IN ("""
         for i in range(len(options)):
             query += """?,"""
         query = query[:-1] + """) AND image_path IS NOT NULL AND """ + self.parent.language2.get().lower() + """ IS NOT NULL"""  #Only need one language_.get().lower()
@@ -427,6 +429,16 @@ class Q_picture(Quiz):
         
         #return Q
     
+    def check(self, parent):
+        print(self.current)
+        if " ".join(self.string.get().split()) ==  self.current[0]:    #Removes all extra whitespace
+            print("correct")
+            parent.page3.correct.tkraise()
+            
+        else:
+            print("incorrect")
+            parent.page3.wrong.tkraise()
+    
     def next_question(self, parent):
         try:
             self.current = next(self.Q_iter)
@@ -442,7 +454,7 @@ class Q_picture(Quiz):
         self.display_image()
 
     def display_image(self):
-        image = Image.open(self.current[2])
+        image = Image.open(self.current[1])
         image.thumbnail((300,300), Image.Resampling.LANCZOS)
         image= ImageTk.PhotoImage(image)
         self.question.configure(image = image)
@@ -501,8 +513,6 @@ class Completed(tk.Frame):
         self.frame.pack(side=tk.BOTTOM)
         self.restart_btn = tk.Button(self.frame, text = "Restart?", width=20, command= lambda: [parent.page2.restart(), self.command_change(parent), parent.page2.tkraise()])
         self.restart_btn.pack(side = tk.LEFT, pady=10, padx=5)
-        self.refresh_btn = tk.Button(self.frame, text = "Refresh?", width=20, command= lambda: [self.command_change(parent), parent.page2.tkraise(), parent.page2.questions(parent.page1.picked)])
-        self.refresh_btn.pack(side = tk.RIGHT, pady=10, padx=5) 
         
     def command_change(self, parent):
         parent.page3.correct.sub_btn.configure(command= parent.page2.tkraise)
@@ -817,10 +827,11 @@ class Add_language(tk.simpledialog.Dialog):
     def body(self,master):        
         self.entry_frame = tk.Frame(master)
         self.entry_frame.pack(side=tk.TOP, fill=tk.X)
+        self.entry_frame.columnconfigure([0,1], weight=1)
         self.count = 0
         self.strings = {self.count: tk.StringVar()}
         self.entries = {self.count: tk.Entry(self.entry_frame, textvariable= self.strings[self.count])}
-        self.entries[self.count].pack(fill=tk.X)
+        self.entries[self.count].grid(row=0, column=0)
         
         another_frame = tk.Frame(master)
         another_frame.pack(side=tk.TOP, fill=tk.X)
@@ -831,10 +842,16 @@ class Add_language(tk.simpledialog.Dialog):
         #sub_btn.pack(side=tk.BOTTOM)
     
     def add_another(self):
-        self.strings[self.count+1] = tk.StringVar()
-        self.entries[self.count+1] = tk.Entry(self.entry_frame, textvariable= self.strings[self.count+1])
-        self.entries[self.count+1].pack(side=tk.TOP, fill=tk.X)
         self.count += 1
+        i=self.count
+        self.strings[self.count] = tk.StringVar()
+        self.entries[self.count] = [tk.Entry(self.entry_frame, textvariable= self.strings[self.count]), tk.Button(self.entry_frame, text = "Del", command = lambda i=i: self.delete(i))]
+        self.entries[self.count][0].grid(row=self.count, column=0)
+        self.entries[self.count][1].grid(row=self.count, column=1)
+        
+    def delete(self, index):
+        self.entries[index][0].destroy()
+        self.entries[index][1].destroy()
         
     def add_data(self):
         query_start = """ALTER TABLE french 
@@ -939,7 +956,6 @@ class Delete_language(tk.simpledialog.Dialog): #Rename self.cats?
             if self.values[i].get() == 1:
                 query.append(query_start + i.lower())     #Change append method to different algorithm?
                 tick_count += 1
-        
         
         if len(self.cats)-tick_count < 2:
             tk.messagebox.showerror("ERROR", "Need to keep atleast 2 langauges")
