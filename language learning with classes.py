@@ -864,8 +864,9 @@ class Add_language(tk.simpledialog.Dialog):
         conn = sqlite3.connect("french.db")
         c = conn.cursor()
         for key in self.strings:
-            query = query_start + self.strings[key].get() + """ VARCHAR(255);"""
-            c.execute(query)
+            if self.strings[key].get().split() != []:      #shows as "" if string is empty or only contains white spaces
+                query = query_start + self.strings[key].get() + """ VARCHAR(255);"""
+                c.execute(query)
         conn.commit()
         conn.close()
         
