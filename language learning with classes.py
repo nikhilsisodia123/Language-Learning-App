@@ -5,6 +5,8 @@ import sqlite3
 import random 
 import numpy as np
 from PIL import Image, ImageTk
+import pandas as pd
+from tkfontawesome import icon_to_image
 
 menu_width = 10
 topbar_colour = "lightblue"
@@ -15,16 +17,21 @@ class initialise(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
 
+        sandwich = icon_to_image("bars", fill="#111212", scale_to_height=30)
+        cog = icon_to_image("cog", fill="#111212", scale_to_height=30)
+        
         self.topbar = tk.Frame(self, bg=topbar_colour)
         self.topbar.rowconfigure(0)
         self.topbar.columnconfigure(0, weight=1, uniform="b")
         self.topbar.columnconfigure(1, weight=200)
         self.topbar.columnconfigure(2, weight=1, uniform="b")
         self.topbar.pack(side=tk.TOP, fill = tk.X)
-        self.menu = tk.Button(self.topbar, text = "menu", width = 15, command=self.sidebar_change)
+        self.menu = tk.Button(self.topbar, image=sandwich,width=109, command=self.sidebar_change)
+        self.menu.image = sandwich
         self.menu.grid(row=0, column=0, sticky="nsw")
         #self.languages = Languages(self.topbar, "blue")
-        self.settings =tk.Button(self.topbar, text="Settings")
+        self.settings =tk.Button(self.topbar, text="Settings", image=cog)
+        self.settings.image=cog
         self.settings.grid(row=0, column=2, sticky = "nsew") #No set width
         #Dont use self.title as it will create problems when using dialogbox in database section
         self.title_ = tk.Label(self.topbar, text = "Language Learning APP", font = ("Arial", 25), bg=topbar_colour)
@@ -176,7 +183,7 @@ class Pages(tk.Frame):
         
         self.language_bar = tk.Frame(self)
         self.language_bar.pack(side=tk.TOP, fill=tk.X, pady=5)
-        self.content = tk.Frame(self, bg="blue")
+        self.content = tk.Frame(self)
         self.content.pack(fill=tk.BOTH, expand=True)
         self.content.rowconfigure(0, weight=1)
         self.content.columnconfigure(0, weight=1)
@@ -864,7 +871,7 @@ class Add_language(tk.simpledialog.Dialog):
         conn = sqlite3.connect("french.db")
         c = conn.cursor()
         for key in self.strings:
-            if self.strings[key].get().split() != []:      #shows as "" if string is empty or only contains white spaces
+            if self.strings[key].get().split() != []:      #shows as [] if string is empty or only contains white spaces
                 query = query_start + self.strings[key].get() + """ VARCHAR(255);"""
                 c.execute(query)
         conn.commit()
