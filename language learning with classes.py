@@ -5,7 +5,6 @@ import sqlite3
 import random 
 import numpy as np
 from PIL import Image, ImageTk
-import pandas as pd
 from tkfontawesome import icon_to_image
 
 menu_width = 10
@@ -16,9 +15,10 @@ topbar_height=44
 class initialise(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-
-        sandwich = icon_to_image("bars", fill="#111212", scale_to_height=30)
-        cog = icon_to_image("cog", fill="#111212", scale_to_height=30)
+        
+        #icons
+        self.sandwich = icon_to_image("bars", fill="#111212", scale_to_height=30)  #Doesn't need to be self as mainloop() is in same scope but better 
+        self.cog = icon_to_image("cog", fill="#111212", scale_to_height=30)        #incase mainloop is moved
         
         self.topbar = tk.Frame(self, bg=topbar_colour)
         self.topbar.rowconfigure(0)
@@ -26,12 +26,12 @@ class initialise(tk.Tk):
         self.topbar.columnconfigure(1, weight=200)
         self.topbar.columnconfigure(2, weight=1, uniform="b")
         self.topbar.pack(side=tk.TOP, fill = tk.X)
-        self.menu = tk.Button(self.topbar, image=sandwich,width=109, command=self.sidebar_change)
-        self.menu.image = sandwich
+        self.menu = tk.Button(self.topbar, image=self.sandwich,width=109, command=self.sidebar_change)
+        #self.menu.image = sandwich
         self.menu.grid(row=0, column=0, sticky="nsw")
         #self.languages = Languages(self.topbar, "blue")
-        self.settings =tk.Button(self.topbar, text="Settings", image=cog)
-        self.settings.image=cog
+        self.settings =tk.Button(self.topbar, text="Settings", image=self.cog)
+        #self.settings.image=cog
         self.settings.grid(row=0, column=2, sticky = "nsew") #No set width
         #Dont use self.title as it will create problems when using dialogbox in database section
         self.title_ = tk.Label(self.topbar, text = "Language Learning APP", font = ("Arial", 25), bg=topbar_colour)
@@ -43,12 +43,7 @@ class initialise(tk.Tk):
         self.main.rowconfigure(0, weight=1)
         self.main.columnconfigure(0, weight=1)
         
-        #self.main.language1 = self.languages.language1
-        #self.main.language2 = self.languages.language2
         self.home = Home(self.main)
-        
-        #self.tran_only = Pages(self.main, "tran_only")
-        #self.pic_only = Pages(self.main, "pic_only")
         
         self.database = Database(self.main)
         #self.tran_only.tkraise() #change to home section
@@ -57,16 +52,23 @@ class initialise(tk.Tk):
         self.sidebar = Sidebar(self)
         self.sidebar_click = 0
         
-    def tran_only_mode(self):
-        self.tran_only = Pages(self.main, "tran_only")
-        self.tran_only.content.page2.tkraise()
-        self.sidebar.home_btn2.configure(command = lambda: [self.sidebar.highlight(2), self.tran_only.tkraise()])
+        self.home.tkraise()
+        self.mainloop()
         
+    def tran_only_mode(self):
+        if self.database_check() != []:    #NEED TO CHECK THIS WARNING WORKS AND ADD WARNING WHEN REFRESH QUIZ
+            self.tran_only = Pages(self.main, "tran_only")
+            self.tran_only.content.page2.tkraise()
+            self.sidebar.home_btn2.configure(command = lambda: [self.sidebar.highlight(2), self.tran_only.tkraise()])
+        else:
+            tk.messagebox.showerror("ERROR", "Database is empty. Put data in before using quizes")
     def pic_only_mode(self):
-        self.pic_only = Pages(self.main, "pic_only")
-        self.pic_only.content.page2.tkraise()
-        self.sidebar.home_btn3.configure(command = lambda: [self.sidebar.highlight(3), self.pic_only.tkraise()])
-
+        if self.database_check() != []:
+            self.pic_only = Pages(self.main, "pic_only")
+            self.pic_only.content.page2.tkraise()
+            self.sidebar.home_btn3.configure(command = lambda: [self.sidebar.highlight(3), self.pic_only.tkraise()])
+        else:
+            tk.messagebox.showerror("ERROR", "Database is empty. Put data in before using quizes")
         
     def sidebar_change(self):
         if self.sidebar_click == 0:
@@ -78,7 +80,12 @@ class initialise(tk.Tk):
         else:
             self.sidebar.place(x=0, y=44, width=115, relheight= 1, anchor = "ne")
             self.sidebar_click = 0
-            
+    
+    def database_check(self):    #implement method into Quiz maybe? Check every restart 
+        conn = sqlite3.connect("french.db")
+        c = conn.cursor()
+        c.execute("""SELECT * FROM french""")
+        return(c.fetchone())
     
 class Home(tk.Frame):
     def __init__(self, parent):
@@ -91,9 +98,6 @@ class Languages(tk.Frame):
     def __init__(self, parent, color):
         tk.Frame.__init__(self, parent, bg=color)
         langs = self.query_col()
-        
-        global language1 #i know i know its taboo. However, better than passing down multiple classes. Could maybe use inheritance?
-        global language2
         
         self.language1 = tk.StringVar()
         self.language1.set("english")
@@ -140,10 +144,8 @@ class Sidebar(tk.Frame):
         self.top=tk.Frame(self, height=topbar_height, bg="blue")
         self.bottom=tk.Frame(self, bg="pink")
         self.top.pack(side=tk.TOP, fill=tk.X)
-        self.top.pack_propagate(0)
         self.bottom.pack(expand=True, fill=tk.BOTH)
-        
-        self.place(x=0, width=114, relheight=1, anchor = "ne")
+        self.place(x=0, width=parent.menu.winfo_width(), relheight=1, anchor = "ne")
         #self.home_btn1 = tk.Button(self.bottom, text="HOME", command = lambda: [self.highlight(1)])
         self.home_btn1 = tk.Button(self.bottom, text="HOME", command = lambda: [self.highlight(1), parent.home.tkraise()]) 
         self.home_btn2 = tk.Button(self.bottom, text="TRANSLATE ONLY", command = lambda: [self.highlight(2), parent.tran_only_mode()]) #Add function to check the language pairs will not give all nulls in question method
@@ -463,9 +465,8 @@ class Q_picture(Quiz):
     def display_image(self):
         image = Image.open(self.current[1])
         image.thumbnail((300,300), Image.Resampling.LANCZOS)
-        image= ImageTk.PhotoImage(image)
-        self.question.configure(image = image)
-        self.question.image = image
+        self.image= ImageTk.PhotoImage(image)
+        self.question.configure(image = self.image)
     
 
 class Judge(tk.Frame):
@@ -563,6 +564,7 @@ class Database(tk.Frame):
     def treeview(self):
         columns = self.query_col()+["Category", "Image Path", "id"]
         self.tree = ttk.Treeview(self.list, column=columns, show="headings")
+        self.scrollbar_v = tk.Scrollbar(self.list, bg="black")
         self.heading_names = {}
         for i in columns:
             self.tree.heading(i, text=i.capitalize())
@@ -572,7 +574,10 @@ class Database(tk.Frame):
         self.tree.bind("<Delete>", self.delete)
         self.tree.bind("<Double-1>", lambda event: self.modify())
         
-        self.tree.pack(pady=10, padx=10, fill=tk.X)
+        self.scrollbar_v.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.config(yscrollcommand = self.scrollbar_v.set)
+        self.scrollbar_v.config(command = self.tree.yview)
+        self.tree.pack(pady=10, padx=10, expand=True)
         
     def update_treeview(self):
         for i in self.tree.get_children():
@@ -839,7 +844,8 @@ class Add_language(tk.simpledialog.Dialog):
         self.strings = {self.count: tk.StringVar()}
         self.entries = {self.count: tk.Entry(self.entry_frame, textvariable= self.strings[self.count])}
         self.entries[self.count].grid(row=0, column=0)
-        
+        self.entries[0].update()
+        self.bin = icon_to_image("trash", scale_to_height = self.entries[0].winfo_height()-5)   #Bin icon for delete button
         another_frame = tk.Frame(master)
         another_frame.pack(side=tk.TOP, fill=tk.X)
         another_btn = tk.Button(another_frame, text="Add another language", command= self.add_another)
@@ -852,7 +858,7 @@ class Add_language(tk.simpledialog.Dialog):
         self.count += 1
         i=self.count
         self.strings[self.count] = tk.StringVar()
-        self.entries[self.count] = [tk.Entry(self.entry_frame, textvariable= self.strings[self.count]), tk.Button(self.entry_frame, text = "Del", command = lambda i=i: self.delete(i))]
+        self.entries[self.count] = [tk.Entry(self.entry_frame, textvariable= self.strings[self.count]), tk.Button(self.entry_frame, image = self.bin, command = lambda i=i: self.delete(i))]
         self.entries[self.count][0].grid(row=self.count, column=0)
         self.entries[self.count][1].grid(row=self.count, column=1)
         
@@ -996,8 +1002,8 @@ class Delete_language(tk.simpledialog.Dialog): #Rename self.cats?
     
 root = initialise()
 #root.tran_only.content.page2.input_ans.focus_force()
-root.home.tkraise()
-root.mainloop()
+#root.home.tkraise()
+#root.mainloop()
 
 
 #conn=sqlite3.connect("french.db")
