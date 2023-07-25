@@ -530,14 +530,19 @@ class Database(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.grid(row=0, column=0, sticky="nsew")
-        self.list = tk.Frame(self)
+        self.list = tk.Frame(self, width = 900, height = 250)   
+        self.list.pack_propagate(0)                             #stops self.list frame from resizing according to its children widgets
         self.input=tk.Frame(self)
         self.symbols = tk.Frame(self)
         
-        self.list.pack(fill=tk.X)
+        self.list.pack()
         self.input.pack()
         self.symbols.pack(pady=10)
         
+        self.scrollbar_v = tk.Scrollbar(self.list, bg="black")
+        self.scrollbar_h = tk.Scrollbar(self.list, bg="black", orient = "horizontal")
+        self.scrollbar_v.pack(side=tk.RIGHT, fill=tk.Y)
+        self.scrollbar_h.pack(side=tk.BOTTOM, fill=tk.X)
         self.treeview()
         
         self.input.rowconfigure([0,1], weight=1, uniform="a")
@@ -559,25 +564,25 @@ class Database(tk.Frame):
         #self.accents.pack()
         self.cat_combobox = tk.StringVar() #For category combobox in Modify class, keeps memory of last stored category
         
-        
 
     def treeview(self):
         columns = self.query_col()+["Category", "Image Path", "id"]
         self.tree = ttk.Treeview(self.list, column=columns, show="headings")
-        self.scrollbar_v = tk.Scrollbar(self.list, bg="black")
         self.heading_names = {}
         for i in columns:
             self.tree.heading(i, text=i.capitalize())
         for i in self.all_data():
             display = i[3:]+i[:3]
             self.tree.insert("", tk.END, values = display)
+        
         self.tree.bind("<Delete>", self.delete)
         self.tree.bind("<Double-1>", lambda event: self.modify())
-        
-        self.scrollbar_v.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.config(yscrollcommand = self.scrollbar_v.set)
+        self.tree.config(xscrollcommand = self.scrollbar_h.set)
         self.scrollbar_v.config(command = self.tree.yview)
+        self.scrollbar_h.config(command = self.tree.xview)
         self.tree.pack(pady=10, padx=10, expand=True)
+
         
     def update_treeview(self):
         for i in self.tree.get_children():
