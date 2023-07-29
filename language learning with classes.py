@@ -675,7 +675,7 @@ class Database(tk.Frame):
         
     def add_language(self):
         self.add_lang = Add_language(self)
-        print(self.cat_combobox.get())
+        #print(self.cat_combobox.get())
         
     def delete_language(self):
         self.del_lang = Delete_language(self)
@@ -689,7 +689,7 @@ class Dialogue(tk.simpledialog.Dialog):
         self.columns = parent.query_col()             #Why did I have to put this before the init of parent class??
         self.parent = parent        
         tk.simpledialog.Dialog.__init__(self, parent) #It's because the init uses the body function so need to define self.columns = query_cols() first, otherwise when called
-                                                      #it would be undefined
+        self.current_page = "null"                                            #it would be undefined
  
         
     
@@ -703,21 +703,29 @@ class Dialogue(tk.simpledialog.Dialog):
             self.labels[j].grid(row=i, column=0)
             self.entries[j] = tk.Entry(parent, textvariable=self.inputs[j])
             self.entries[j].grid(row=i, column=1)
+            self.entries[j].bind("<Button-1>", lambda event, j=j: self.current_ent(j))
         self.inputs["category"] =  tk.StringVar()
         self.inputs["category"].set(self.parent.cat_combobox.get())
         self.labels["category"] = tk.Label(parent, text = "Category:")
         self.labels["category"].grid(row=i+1, column=0)
         self.entries["category"]= ttk.Combobox(parent, textvariable = self.inputs["category"], values= self.categories())
         self.entries["category"].grid(row=i+1, column=1)
+        self.entries["category"].bind("<Button-1>", lambda event: self.current_ent("category"))
         self.inputs["image_path"] = tk.StringVar()
         self.labels["image_path"] = tk.Label(parent, text = "Image path:")
         self.labels["image_path"].grid(row=i+2, column=0)
         self.entries["image_path"]=tk.Entry(parent, textvariable = self.inputs["image_path"])
         self.entries["image_path"].grid(row=i+2, column=1)
-        #self.inputs["french"].set("LOL")                   #Cant set StringVar variables from outside body function???? But can use get on it
-                                                            #Possibly code executed after the error window is closed, which means we do not see it when the stringVar is set to a different value
+        self.entries["image_path"].bind("<Button-1>", lambda event: self.current_ent("image_path"))
+        
+        self.accents = tk.Frame(parent)
+        self.accents.grid(row=i+3, column=0, columnspan=2)
+        char_list = ["\u0300", "\u0301", "\u0303", "\u0304", "\u0305", "\u0306", "\u0307"]
+        self.accent_btns(char_list)
+
+
     def add_data(self):   
-        print(self.parent.cat_combobox.get())                          
+        #print(self.parent.cat_combobox.get())                          
         query_start = """INSERT INTO french("""
         query_end = """ VALUES ("""
         values = []
@@ -769,6 +777,29 @@ class Dialogue(tk.simpledialog.Dialog):
         conn.commit()
         conn.close()
         return category
+    
+    def accent_btns(self,char_list):
+        self.btns = {}
+        self.strings = {}
+        column=0
+        row=0
+        for i in char_list:
+            self.btns[i] = tk.Button(self.accents, text=i, font=(5), anchor="s", width=2, command=lambda i=i: self.add_accent(i))
+            self.btns[i].grid(row=row, column=column)
+            column += 1
+    
+
+    def add_accent(self, char):
+        self.string = self.inputs[self.current_entry]
+        self.entry = self.entries[self.current_entry]
+        a = self.string.get()
+        self.string.set(a+char)
+        self.entry.icursor(len(a)+1)
+            
+    def current_ent(self, ind):
+        self.current_entry = ind
+        print(self.current_entry)
+        
     
 class Modify(tk.simpledialog.Dialog):              #Comment and document this whole class its a mess also rename to better variable names
     def __init__(self, parent):
